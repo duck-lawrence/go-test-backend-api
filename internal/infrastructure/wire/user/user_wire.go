@@ -4,6 +4,7 @@ package user
 
 import (
 	"github.com/ducklawrence05/go-test-backend-api/config"
+	externalServiceImpl "github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/externalservice"
 	"github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/repository/postgres"
 	rdRepo "github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/repository/redis"
 	userInterface "github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
@@ -18,8 +19,12 @@ import (
 func NewUserAuthManager(
 	config *config.Config,
 	db *gorm.DB,
+	// jwtService externalServiceInterface.JwtService,
+	// passwordService externalServiceInterface.PasswordService,
 ) userInterface.UserAuthManager {
 	wire.Build(
+		externalServiceImpl.NewJwtService,
+		externalServiceImpl.NewPasswordService,
 		postgres.NewUserRepo,
 		postgres.NewRefreshTokenRepo,
 		postgres.NewUserManagerUow,

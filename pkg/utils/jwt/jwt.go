@@ -6,14 +6,10 @@ import (
 	"github.com/ducklawrence05/go-test-backend-api/config"
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/errorcode"
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/jwtpurpose"
+	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/externalservice"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
-
-type CustomClaims struct {
-	Purpose jwtpurpose.JWTPurpose `json:"purpose"`
-	jwt.RegisteredClaims
-}
 
 func createJWT(secret []byte, claims jwt.Claims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -21,8 +17,8 @@ func createJWT(secret []byte, claims jwt.Claims) (string, error) {
 	return token.SignedString(secret)
 }
 
-func ValidateToken(secret []byte, tokenString string, purpose jwtpurpose.JWTPurpose) (*CustomClaims, error) {
-	claims := &CustomClaims{}
+func ValidateToken(secret []byte, tokenString string, purpose jwtpurpose.JWTPurpose) (*externalservice.CustomClaims, error) {
+	claims := &externalservice.CustomClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errorcode.ErrUnexpectedSigningToken
@@ -47,7 +43,7 @@ func ValidateToken(secret []byte, tokenString string, purpose jwtpurpose.JWTPurp
 
 // GenerateAcAndRtTokens creates access token and refresh token
 func GenerateAcAndRtTokens(cfg *config.JWT, userID uuid.UUID) (string, string, error) {
-	accessToken, err := createJWT([]byte(cfg.AccessTokenKey), CustomClaims{
+	accessToken, err := createJWT([]byte(cfg.AccessTokenKey), externalservice.CustomClaims{
 		Purpose: jwtpurpose.Access,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
@@ -59,7 +55,7 @@ func GenerateAcAndRtTokens(cfg *config.JWT, userID uuid.UUID) (string, string, e
 		return "", "", err
 	}
 
-	refreshToken, err := createJWT([]byte(cfg.RefreshTokenKey), CustomClaims{
+	refreshToken, err := createJWT([]byte(cfg.RefreshTokenKey), externalservice.CustomClaims{
 		Purpose: jwtpurpose.Refresh,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
@@ -78,7 +74,7 @@ func GenerateAcAndRtTokens(cfg *config.JWT, userID uuid.UUID) (string, string, e
 func GenerateEmailToken(secret []byte, expiresIn time.Duration, email string, purpose jwtpurpose.JWTPurpose) (string, error) {
 	emailVerifyToken, err := createJWT(
 		secret,
-		CustomClaims{
+		externalservice.CustomClaims{
 			Purpose: purpose,
 			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   email,
