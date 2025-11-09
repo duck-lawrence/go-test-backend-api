@@ -1,4 +1,4 @@
-package implement_test
+package implement
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/externalservice"
 	useCaseMock "github.com/ducklawrence05/go-test-backend-api/internal/usecase/mock"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
-	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user/implement"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -43,7 +42,7 @@ func setupManager() (user.UserAuthManager,
 	pwSvc := new(useCaseMock.MockPasswordService)
 	uowMock := new(useCaseMock.MockUserManagerUow)
 
-	manager := implement.NewUserAuthManager(cfg, uowMock, userRepo, rtRepo, jwtSvc, pwSvc)
+	manager := NewUserAuthManager(cfg, uowMock, userRepo, rtRepo, jwtSvc, pwSvc)
 	return manager, userRepo, rtRepo, jwtSvc, pwSvc, ctx
 }
 
