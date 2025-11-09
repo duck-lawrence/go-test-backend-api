@@ -1,4 +1,4 @@
-package usecase_test
+package implement_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/jwtpurpose"
 	"github.com/ducklawrence05/go-test-backend-api/internal/entities"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/externalservice"
-	useCaseMock "github.com/ducklawrence05/go-test-backend-api/internal/usecase/test/mock"
+	useCaseMock "github.com/ducklawrence05/go-test-backend-api/internal/usecase/mock"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user/implement"
 	"github.com/golang-jwt/jwt/v4"
@@ -59,7 +59,7 @@ func TestLogin_ValidInput_ReturnsAccessAndRefreshToken(t *testing.T) {
 		hpw string
 	}{
 		{user.LoginUserVO{EmailOrUsername: "john", Password: "plain"}, uuid.New(), "hashed"},
-		// {user.LoginUserVO{EmailOrUsername: "jane", Password: "123456"}, uuid.New(), "hashed2"},
+		{user.LoginUserVO{EmailOrUsername: "jane", Password: "123456"}, uuid.New(), "hashed2"},
 	}
 
 	for _, u := range users {
