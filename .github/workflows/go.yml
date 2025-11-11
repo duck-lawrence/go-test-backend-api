@@ -1,23 +1,18 @@
-name: Go CI
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Go 1.24.5
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.24.5'
+
+      - name: Install Wire
+        run: go install github.com/google/wire/cmd/wire@latest
+
+      - name: Generate Wire
+        run: wire ./internal/infrastructure/wire/...
 
       - name: Run tests
         run: go test -v ./...
@@ -25,7 +20,7 @@ jobs:
       - name: Build main.exe
         run: go build -o ./bin/main.exe cmd/app/main.go
 
-      - name: Upload main.exe artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: main-exe
