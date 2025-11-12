@@ -148,27 +148,67 @@ func TestLogin_InvalidPassword_ReturnsError(t *testing.T) {
 	}
 }
 
-// -------------------- TEST JWT GENERATE ERROR --------------------
-func TestLogin_JwtGenerationFails_ReturnsError(t *testing.T) {
+// -------------------- TEST JWT GENERATE OR VALIDATE TOKEN ERROR --------------------
+func TestLogin_JwtGenerationOrValidateFails_ReturnsError(t *testing.T) {
 	manager, userRepo, _, jwtSvc, pwSvc, ctx := setupManager()
 
 	userID := uuid.New()
 	userEntity := &entities.User{ID: userID, Password: "hashed"}
 	vo := user.LoginUserVO{EmailOrUsername: "john", Password: "plain"}
 
-	userRepo.On("GetByUserNameOrEmail", ctx, vo.EmailOrUsername).Return(userEntity, nil)
-	pwSvc.On("ComparePasswords", userEntity.Password, []byte(vo.Password)).Return(true)
-	jwtSvc.On("GenerateAcAndRtTokens", mock.Anything, userID).Return("", "", errors.New("jwt error"))
+	claims := &externalservice.CustomClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	}
 
-	ac, rt, err := manager.Login(ctx, vo)
-	require.Error(t, err)
-	require.Equal(t, "jwt error", err.Error())
-	require.Empty(t, ac)
-	require.Empty(t, rt)
+	tests := []struct {
+		name             string
+		mockGenerateErr  error
+		mockValidateErr  error
+		expectedErrorMsg string
+	}{
+		{
+			name:             "JwtGenerationFails",
+			mockGenerateErr:  errors.New("jwt error"),
+			mockValidateErr:  nil,
+			expectedErrorMsg: "jwt error",
+		},
+		{
+			name:             "ValidateTokenFails",
+			mockGenerateErr:  nil,
+			mockValidateErr:  errors.New("token invalid"),
+			expectedErrorMsg: "token invalid",
+		},
+	}
 
-	userRepo.AssertExpectations(t)
-	jwtSvc.AssertExpectations(t)
-	pwSvc.AssertExpectations(t)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// reset mocks
+			userRepo.ExpectedCalls = nil
+			jwtSvc.ExpectedCalls = nil
+			pwSvc.ExpectedCalls = nil
+
+			// setup mocks
+			userRepo.On("GetByUserNameOrEmail", ctx, vo.EmailOrUsername).Return(userEntity, nil)
+			pwSvc.On("ComparePasswords", userEntity.Password, []byte(vo.Password)).Return(true)
+			jwtSvc.On("GenerateAcAndRtTokens", mock.Anything, userID).Return("ac", "rt", tt.mockGenerateErr)
+			if tt.mockValidateErr != nil {
+				jwtSvc.On("ValidateToken", mock.Anything, "rt", jwtpurpose.Refresh).Return(claims, tt.mockValidateErr)
+			}
+
+			ac, rt, err := manager.Login(ctx, vo)
+			require.Error(t, err)
+			require.Equal(t, tt.expectedErrorMsg, err.Error())
+			require.Empty(t, ac)
+			require.Empty(t, rt)
+
+			userRepo.AssertExpectations(t)
+			jwtSvc.AssertExpectations(t)
+			pwSvc.AssertExpectations(t)
+		})
+	}
 }
 
 // -------------------- TEST REFRESH TOKEN REPO CREATE ERROR --------------------
@@ -201,4 +241,27 @@ func TestLogin_RefreshTokenCreateFails_ReturnsError(t *testing.T) {
 	rtRepo.AssertExpectations(t)
 	jwtSvc.AssertExpectations(t)
 	pwSvc.AssertExpectations(t)
+}
+
+// -------------------- TEST PANIC UNIMPLEMENT --------------------
+func TestLogout_Panic_BranchCoverage(t *testing.T) {
+	manager, _, _, _, _, ctx := setupManager()
+
+	require.Panics(t, func() {
+		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: ""})
+	})
+	require.Panics(t, func() {
+		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: "something"})
+	})
+}
+
+func TestRefreshToken_Panic_BranchCoverage(t *testing.T) {
+	manager, _, _, _, _, ctx := setupManager()
+
+	require.Panics(t, func() {
+		_, _, _ = manager.RefreshToken(ctx, "")
+	})
+	require.Panics(t, func() {
+		_, _, _ = manager.RefreshToken(ctx, "token")
+	})
 }
