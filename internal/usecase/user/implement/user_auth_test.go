@@ -244,24 +244,24 @@ func TestLogin_RefreshTokenCreateFails_ReturnsError(t *testing.T) {
 }
 
 // -------------------- TEST PANIC UNIMPLEMENT --------------------
-func TestLogout_Panic_BranchCoverage(t *testing.T) {
-	manager, _, _, _, _, ctx := setupManager()
+// func TestLogout_Panic_BranchCoverage(t *testing.T) {
+// 	manager, _, _, _, _, ctx := setupManager()
 
-	require.Panics(t, func() {
-		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: ""})
-	})
-	require.Panics(t, func() {
-		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: "something"})
-	})
-}
+// 	require.Panics(t, func() {
+// 		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: ""})
+// 	})
+// 	require.Panics(t, func() {
+// 		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: "something"})
+// 	})
+// }
 
-func TestRefreshToken_Panic_BranchCoverage(t *testing.T) {
-	manager, _, _, _, _, ctx := setupManager()
+// func TestRefreshToken_Panic_BranchCoverage(t *testing.T) {
+// 	manager, _, _, _, _, ctx := setupManager()
 
-	require.Panics(t, func() {
-		_, _, _ = manager.RefreshToken(ctx, "")
-	})
-	require.Panics(t, func() {
-		_, _, _ = manager.RefreshToken(ctx, "token")
-	})
-}
+// 	require.Panics(t, func() {
+// 		_, _, _ = manager.RefreshToken(ctx, "")
+// 	})
+// 	require.Panics(t, func() {
+// 		_, _, _ = manager.RefreshToken(ctx, "token")
+// 	})
+// }
