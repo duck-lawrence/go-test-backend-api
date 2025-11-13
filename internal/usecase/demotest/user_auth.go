@@ -85,11 +85,11 @@ func (m *userAuthManager) Login(ctx context.Context, vo user.LoginUserVO) (strin
 }
 
 func (m *userAuthManager) Logout(ctx context.Context, vo user.LogoutUserVO) error {
-	_ = vo.RefreshToken == ""
+	// _ = vo.RefreshToken == ""
 	panic("unimplement")
 }
 
 func (m *userAuthManager) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
-	_ = refreshToken == ""
+	// _ = refreshToken == ""
 	panic("unimplement")
 }
