@@ -2,7 +2,7 @@ package user
 
 import "github.com/google/uuid"
 
-type CreateUserVO struct {
+type CreateUserDto struct {
 	Email     string
 	UserName  string
 	FirstName string
@@ -10,29 +10,29 @@ type CreateUserVO struct {
 	Password  string
 }
 
-type RestoreUserVO struct {
+type RestoreUserDto struct {
 	Email       string
 	NewPassword string
 }
 
-type LoginUserVO struct {
+type LoginUserDto struct {
 	EmailOrUsername string
 	Password        string
 }
 
-type LogoutUserVO struct {
+type LogoutUserDto struct {
 	UserID       uuid.UUID
 	RefreshToken string
 }
 
-type UpdateMeVO struct {
+type UpdateMeDto struct {
 	UserID    uuid.UUID
 	UserName  string
 	FirstName string
 	LastName  string
 }
 
-type ChangePasswordVO struct {
+type ChangePasswordDto struct {
 	UserID      uuid.UUID
 	OldPassword string
 	NewPassword string

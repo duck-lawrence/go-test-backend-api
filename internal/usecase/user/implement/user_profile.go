@@ -47,9 +47,9 @@ func (m *userProfileManager) GetMe(ctx context.Context, userID uuid.UUID) (*enti
 	return user, nil
 }
 
-func (m *userProfileManager) UpdateMe(ctx context.Context, vo user.UpdateMeVO) (*entities.User, error) {
+func (m *userProfileManager) UpdateMe(ctx context.Context, dto user.UpdateMeDto) (*entities.User, error) {
 	// get user
-	user, err := m.userRepo.GetByID(ctx, vo.UserID)
+	user, err := m.userRepo.GetByID(ctx, dto.UserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errorcode.ErrUserNotFound
@@ -58,23 +58,23 @@ func (m *userProfileManager) UpdateMe(ctx context.Context, vo user.UpdateMeVO) (
 	}
 
 	// check username unique
-	if vo.UserName != "" {
-		taken, err := m.userRepo.IsUserNameTaken(ctx, vo.UserName, vo.UserID)
+	if dto.UserName != "" {
+		taken, err := m.userRepo.IsUserNameTaken(ctx, dto.UserName, dto.UserID)
 		if err != nil {
 			return nil, err
 		}
 		if taken {
 			return nil, errorcode.ErrInvalidUserName
 		}
-		user.UserName = vo.UserName
+		user.UserName = dto.UserName
 	}
 
 	// other fields
-	if vo.FirstName != "" {
-		user.FirstName = vo.FirstName
+	if dto.FirstName != "" {
+		user.FirstName = dto.FirstName
 	}
-	if vo.LastName != "" {
-		user.LastName = vo.LastName
+	if dto.LastName != "" {
+		user.LastName = dto.LastName
 	}
 
 	// update
@@ -89,9 +89,9 @@ func (m *userProfileManager) UpdateMe(ctx context.Context, vo user.UpdateMeVO) (
 	return user, nil
 }
 
-func (m *userProfileManager) ChangePassword(ctx context.Context, vo user.ChangePasswordVO) error {
+func (m *userProfileManager) ChangePassword(ctx context.Context, dto user.ChangePasswordDto) error {
 	// get user
-	user, err := m.userRepo.GetByID(ctx, vo.UserID)
+	user, err := m.userRepo.GetByID(ctx, dto.UserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errorcode.ErrUserNotFound
@@ -105,7 +105,7 @@ func (m *userProfileManager) ChangePassword(ctx context.Context, vo user.ChangeP
 
 	// check old password
 	g.Go(func() error {
-		if !password.ComparePasswords(user.Password, []byte(vo.OldPassword)) {
+		if !password.ComparePasswords(user.Password, []byte(dto.OldPassword)) {
 			return errorcode.ErrInvalidPassword
 		}
 		return nil
@@ -113,7 +113,7 @@ func (m *userProfileManager) ChangePassword(ctx context.Context, vo user.ChangeP
 
 	// hash password
 	g.Go(func() error {
-		hp, err := password.HashPassword(vo.NewPassword)
+		hp, err := password.HashPassword(dto.NewPassword)
 		if err != nil {
 			return err
 		}

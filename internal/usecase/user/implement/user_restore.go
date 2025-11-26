@@ -105,7 +105,7 @@ func (m *userRestoreManager) VerifyRestoreOTP(ctx context.Context, email string,
 }
 
 // Restore implements user.UserRestoreManager.
-func (m *userRestoreManager) Restore(ctx context.Context, vo user.RestoreUserVO) (string, string, error) {
+func (m *userRestoreManager) Restore(ctx context.Context, dto user.RestoreUserDto) (string, string, error) {
 	g, gCtx := errgroup.WithContext(ctx)
 
 	userChan := make(chan *entities.User, 1)
@@ -113,7 +113,7 @@ func (m *userRestoreManager) Restore(ctx context.Context, vo user.RestoreUserVO)
 
 	// get user by email
 	g.Go(func() error {
-		user, err := m.userRepo.GetByUserNameOrEmail(gCtx, vo.Email)
+		user, err := m.userRepo.GetByUserNameOrEmail(gCtx, dto.Email)
 		if err != nil && !errors.Is(err, errorcode.ErrDeletedAccount) {
 			return err
 		}
@@ -123,7 +123,7 @@ func (m *userRestoreManager) Restore(ctx context.Context, vo user.RestoreUserVO)
 
 	// hash pass
 	g.Go(func() error {
-		hp, err := password.HashPassword(vo.NewPassword)
+		hp, err := password.HashPassword(dto.NewPassword)
 		if err != nil {
 			return err
 		}

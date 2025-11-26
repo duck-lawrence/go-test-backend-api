@@ -149,14 +149,14 @@ func (m *userRegistrationManager) VerifyRegistrationOTP(ctx context.Context, ema
 	return token, nil
 }
 
-func (m *userRegistrationManager) Register(ctx context.Context, vo user.CreateUserVO) (string, string, error) {
+func (m *userRegistrationManager) Register(ctx context.Context, dto user.CreateUserDto) (string, string, error) {
 	g, gCtx := errgroup.WithContext(ctx)
 
 	hpChan := make(chan string, 1)
 
 	// check if username exists
 	g.Go(func() error {
-		exists, err := m.userRepo.IsUserNameTaken(gCtx, vo.UserName, uuid.Nil)
+		exists, err := m.userRepo.IsUserNameTaken(gCtx, dto.UserName, uuid.Nil)
 		if err != nil {
 			return err
 		}
@@ -168,7 +168,7 @@ func (m *userRegistrationManager) Register(ctx context.Context, vo user.CreateUs
 
 	// re-check if email exists
 	g.Go(func() error {
-		exists, err := m.userRepo.IsEmailTaken(gCtx, vo.Email, uuid.Nil)
+		exists, err := m.userRepo.IsEmailTaken(gCtx, dto.Email, uuid.Nil)
 		if err != nil && !errors.Is(err, errorcode.ErrUserNotFound) {
 			return err
 		}
@@ -180,7 +180,7 @@ func (m *userRegistrationManager) Register(ctx context.Context, vo user.CreateUs
 
 	// hash pass
 	g.Go(func() error {
-		hp, err := password.HashPassword(vo.Password)
+		hp, err := password.HashPassword(dto.Password)
 		if err != nil {
 			return err
 		}
@@ -202,10 +202,10 @@ func (m *userRegistrationManager) Register(ctx context.Context, vo user.CreateUs
 	userID := uuid.New()
 	user := &entities.User{
 		ID:        userID,
-		Email:     vo.Email,
-		UserName:  vo.UserName,
-		FirstName: vo.FirstName,
-		LastName:  vo.LastName,
+		Email:     dto.Email,
+		UserName:  dto.UserName,
+		FirstName: dto.FirstName,
+		LastName:  dto.LastName,
 		Password:  <-hpChan,
 		IsActive:  true,
 

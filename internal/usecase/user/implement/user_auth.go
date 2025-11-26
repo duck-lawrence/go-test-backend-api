@@ -44,14 +44,14 @@ func NewUserAuthManager(
 	}
 }
 
-func (m *userAuthManager) Login(ctx context.Context, vo user.LoginUserVO) (string, string, error) {
+func (m *userAuthManager) Login(ctx context.Context, dto user.LoginUserDto) (string, string, error) {
 	// get user from db
-	user, err := m.userRepo.GetByUserNameOrEmail(ctx, vo.EmailOrUsername)
+	user, err := m.userRepo.GetByUserNameOrEmail(ctx, dto.EmailOrUsername)
 	if err != nil {
 		return "", "", err
 	}
 
-	if !m.passwordService.ComparePasswords(user.Password, []byte(vo.Password)) {
+	if !m.passwordService.ComparePasswords(user.Password, []byte(dto.Password)) {
 		return "", "", errorcode.ErrInvalidPassword
 	}
 
@@ -85,26 +85,26 @@ func (m *userAuthManager) Login(ctx context.Context, vo user.LoginUserVO) (strin
 	return accessToken, refreshToken, nil
 }
 
-func (m *userAuthManager) Logout(ctx context.Context, vo user.LogoutUserVO) error {
+func (m *userAuthManager) Logout(ctx context.Context, dto user.LogoutUserDto) error {
 	// decode rt
 	claims, err := jwt.ValidateToken([]byte(m.config.JWT.RefreshTokenKey),
-		vo.RefreshToken, jwtpurpose.Refresh)
+		dto.RefreshToken, jwtpurpose.Refresh)
 	if err != nil {
 		return err
 	}
 
 	// compare userID from ac and rt
-	if claims.Subject != vo.UserID.String() {
+	if claims.Subject != dto.UserID.String() {
 		return errorcode.ErrInvalidToken
 	}
 
 	// check if revoked or not
-	if _, err := m.refreshTokenRepo.GetByTokenAndUserID(ctx, vo.RefreshToken, vo.UserID); err != nil {
+	if _, err := m.refreshTokenRepo.GetByTokenAndUserID(ctx, dto.RefreshToken, dto.UserID); err != nil {
 		return errorcode.ErrInvalidToken
 	}
 
 	// revoke
-	err = m.refreshTokenRepo.Revoke(ctx, vo.RefreshToken, vo.UserID)
+	err = m.refreshTokenRepo.Revoke(ctx, dto.RefreshToken, dto.UserID)
 	if err != nil {
 		return err
 	}

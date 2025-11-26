@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/errorcode"
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/request"
+	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/contract/request"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
 	"github.com/ducklawrence05/go-test-backend-api/pkg/utils/validation"
 	"github.com/gin-gonic/gin"
@@ -79,7 +79,7 @@ func (uc *UserRegistrationController) Register(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing email in email verified token"})
 		return
 	}
-	vo := user.CreateUserVO{
+	dto := user.CreateUserDto{
 		Email:     email.(string),
 		UserName:  req.UserName,
 		FirstName: req.FirstName,
@@ -87,7 +87,7 @@ func (uc *UserRegistrationController) Register(c *gin.Context) {
 		Password:  req.Password,
 	}
 
-	accessToken, refreshToken, err := uc.registration.Register(ctx, vo)
+	accessToken, refreshToken, err := uc.registration.Register(ctx, dto)
 	if err != nil {
 		errorcode.JSONError(c, err)
 		return

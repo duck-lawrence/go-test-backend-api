@@ -43,14 +43,14 @@ func NewUserAuthManager(
 	}
 }
 
-func (m *userAuthManager) Login(ctx context.Context, vo user.LoginUserVO) (string, string, error) {
+func (m *userAuthManager) Login(ctx context.Context, dto user.LoginUserDto) (string, string, error) {
 	// get user from db
-	user, err := m.userRepo.GetByUserNameOrEmail(ctx, vo.EmailOrUsername)
+	user, err := m.userRepo.GetByUserNameOrEmail(ctx, dto.EmailOrUsername)
 	if err != nil {
 		return "", "", err
 	}
 
-	if !m.passwordService.ComparePasswords(user.Password, []byte(vo.Password)) {
+	if !m.passwordService.ComparePasswords(user.Password, []byte(dto.Password)) {
 		return "", "", errorcode.ErrInvalidPassword
 	}
 
@@ -84,8 +84,8 @@ func (m *userAuthManager) Login(ctx context.Context, vo user.LoginUserVO) (strin
 	return accessToken, refreshToken, nil
 }
 
-func (m *userAuthManager) Logout(ctx context.Context, vo user.LogoutUserVO) error {
-	// _ = vo.RefreshToken == ""
+func (m *userAuthManager) Logout(ctx context.Context, dto user.LogoutUserDto) error {
+	// _ = dto.RefreshToken == ""
 	panic("unimplement")
 }
 

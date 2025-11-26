@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/errorcode"
+	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/contract/request"
 	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/mapper"
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/request"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
 	"github.com/ducklawrence05/go-test-backend-api/pkg/utils/validation"
 	"github.com/gin-gonic/gin"
@@ -59,7 +59,7 @@ func (uc *UserProfileController) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	vo := user.UpdateMeVO{
+	dto := user.UpdateMeDto{
 		UserID:    userID.(uuid.UUID),
 		UserName:  req.UserName,
 		FirstName: req.FirstName,
@@ -68,7 +68,7 @@ func (uc *UserProfileController) UpdateMe(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	user, err := uc.profile.UpdateMe(ctx, vo)
+	user, err := uc.profile.UpdateMe(ctx, dto)
 	if err != nil {
 		errorcode.JSONError(c, err)
 		return
@@ -93,7 +93,7 @@ func (uc *UserProfileController) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	vo := user.ChangePasswordVO{
+	dto := user.ChangePasswordDto{
 		UserID:      userID.(uuid.UUID),
 		OldPassword: req.OldPassword,
 		NewPassword: req.NewPassword,
@@ -101,7 +101,7 @@ func (uc *UserProfileController) ChangePassword(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	if err := uc.profile.ChangePassword(ctx, vo); err != nil {
+	if err := uc.profile.ChangePassword(ctx, dto); err != nil {
 		errorcode.JSONError(c, err)
 		return
 	}

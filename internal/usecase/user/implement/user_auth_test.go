@@ -53,16 +53,16 @@ func TestLogin_ValidInput_ReturnsAccessAndRefreshToken(t *testing.T) {
 
 	// Test nhiều user khác nhau nhưng đều valid
 	users := []struct {
-		vo  user.LoginUserVO
+		dto user.LoginUserDto
 		id  uuid.UUID
 		hpw string
 	}{
-		{user.LoginUserVO{EmailOrUsername: "john", Password: "plain"}, uuid.New(), "hashed"},
-		{user.LoginUserVO{EmailOrUsername: "jane", Password: "123456"}, uuid.New(), "hashed2"},
+		{user.LoginUserDto{EmailOrUsername: "john", Password: "plain"}, uuid.New(), "hashed"},
+		{user.LoginUserDto{EmailOrUsername: "jane", Password: "123456"}, uuid.New(), "hashed2"},
 	}
 
 	for _, u := range users {
-		t.Run(u.vo.EmailOrUsername, func(t *testing.T) {
+		t.Run(u.dto.EmailOrUsername, func(t *testing.T) {
 			// ----- ARRANGE -----
 			userEntity := &entities.User{ID: u.id, Password: u.hpw}
 			claims := &externalservice.CustomClaims{
@@ -73,14 +73,14 @@ func TestLogin_ValidInput_ReturnsAccessAndRefreshToken(t *testing.T) {
 			}
 
 			// setup behavior cho các mock
-			userRepo.On("GetByUserNameOrEmail", ctx, u.vo.EmailOrUsername).Return(userEntity, nil)
-			pwSvc.On("ComparePasswords", u.hpw, []byte(u.vo.Password)).Return(true)
+			userRepo.On("GetByUserNameOrEmail", ctx, u.dto.EmailOrUsername).Return(userEntity, nil)
+			pwSvc.On("ComparePasswords", u.hpw, []byte(u.dto.Password)).Return(true)
 			jwtSvc.On("GenerateAcAndRtTokens", mock.Anything, u.id).Return("ac", "rt", nil)
 			jwtSvc.On("ValidateToken", mock.Anything, "rt", jwtpurpose.Refresh).Return(claims, nil)
 			rtRepo.On("Create", ctx, mock.Anything).Return(nil)
 
 			// ----- ACT: gọi hàm cần test -----
-			ac, rt, err := manager.Login(ctx, u.vo)
+			ac, rt, err := manager.Login(ctx, u.dto)
 
 			// ----- ASSERT: kiểm tra kết quả -----
 			require.NoError(t, err)    // không có lỗi
@@ -100,16 +100,16 @@ func TestLogin_ValidInput_ReturnsAccessAndRefreshToken(t *testing.T) {
 func TestLogin_UserNotFound_ReturnsError(t *testing.T) {
 	manager, userRepo, _, _, _, ctx := setupManager()
 
-	inputs := []user.LoginUserVO{
+	inputs := []user.LoginUserDto{
 		{EmailOrUsername: "unknown", Password: "123"},
 		{EmailOrUsername: "ghost", Password: "abc"},
 	}
 
-	for _, vo := range inputs {
-		t.Run(vo.EmailOrUsername, func(t *testing.T) {
-			userRepo.On("GetByUserNameOrEmail", ctx, vo.EmailOrUsername).Return(nil, errorcode.ErrUserNotFound)
+	for _, dto := range inputs {
+		t.Run(dto.EmailOrUsername, func(t *testing.T) {
+			userRepo.On("GetByUserNameOrEmail", ctx, dto.EmailOrUsername).Return(nil, errorcode.ErrUserNotFound)
 
-			ac, rt, err := manager.Login(ctx, vo)
+			ac, rt, err := manager.Login(ctx, dto)
 			require.Error(t, err)
 			require.Equal(t, errorcode.ErrUserNotFound, err)
 			require.Empty(t, ac)
@@ -126,17 +126,17 @@ func TestLogin_InvalidPassword_ReturnsError(t *testing.T) {
 
 	userID := uuid.New()
 	userEntity := &entities.User{ID: userID, Password: "hashed"}
-	inputs := []user.LoginUserVO{
+	inputs := []user.LoginUserDto{
 		{EmailOrUsername: "john", Password: "wrong"},
 		{EmailOrUsername: "jane", Password: "badpass"},
 	}
 
-	for _, vo := range inputs {
-		t.Run(vo.EmailOrUsername, func(t *testing.T) {
-			userRepo.On("GetByUserNameOrEmail", ctx, vo.EmailOrUsername).Return(userEntity, nil)
-			pwSvc.On("ComparePasswords", userEntity.Password, []byte(vo.Password)).Return(false)
+	for _, dto := range inputs {
+		t.Run(dto.EmailOrUsername, func(t *testing.T) {
+			userRepo.On("GetByUserNameOrEmail", ctx, dto.EmailOrUsername).Return(userEntity, nil)
+			pwSvc.On("ComparePasswords", userEntity.Password, []byte(dto.Password)).Return(false)
 
-			ac, rt, err := manager.Login(ctx, vo)
+			ac, rt, err := manager.Login(ctx, dto)
 			require.Error(t, err)
 			require.Equal(t, errorcode.ErrInvalidPassword, err)
 			require.Empty(t, ac)
@@ -154,7 +154,7 @@ func TestLogin_JwtGenerationOrValidateFails_ReturnsError(t *testing.T) {
 
 	userID := uuid.New()
 	userEntity := &entities.User{ID: userID, Password: "hashed"}
-	vo := user.LoginUserVO{EmailOrUsername: "john", Password: "plain"}
+	dto := user.LoginUserDto{EmailOrUsername: "john", Password: "plain"}
 
 	claims := &externalservice.CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -191,14 +191,14 @@ func TestLogin_JwtGenerationOrValidateFails_ReturnsError(t *testing.T) {
 			pwSvc.ExpectedCalls = nil
 
 			// setup mocks
-			userRepo.On("GetByUserNameOrEmail", ctx, vo.EmailOrUsername).Return(userEntity, nil)
-			pwSvc.On("ComparePasswords", userEntity.Password, []byte(vo.Password)).Return(true)
+			userRepo.On("GetByUserNameOrEmail", ctx, dto.EmailOrUsername).Return(userEntity, nil)
+			pwSvc.On("ComparePasswords", userEntity.Password, []byte(dto.Password)).Return(true)
 			jwtSvc.On("GenerateAcAndRtTokens", mock.Anything, userID).Return("ac", "rt", tt.mockGenerateErr)
 			if tt.mockValidateErr != nil {
 				jwtSvc.On("ValidateToken", mock.Anything, "rt", jwtpurpose.Refresh).Return(claims, tt.mockValidateErr)
 			}
 
-			ac, rt, err := manager.Login(ctx, vo)
+			ac, rt, err := manager.Login(ctx, dto)
 			require.Error(t, err)
 			require.Equal(t, tt.expectedErrorMsg, err.Error())
 			require.Empty(t, ac)
@@ -217,7 +217,7 @@ func TestLogin_RefreshTokenCreateFails_ReturnsError(t *testing.T) {
 
 	userID := uuid.New()
 	userEntity := &entities.User{ID: userID, Password: "hashed"}
-	vo := user.LoginUserVO{EmailOrUsername: "john", Password: "plain"}
+	dto := user.LoginUserDto{EmailOrUsername: "john", Password: "plain"}
 	claims := &externalservice.CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -225,13 +225,13 @@ func TestLogin_RefreshTokenCreateFails_ReturnsError(t *testing.T) {
 		},
 	}
 
-	userRepo.On("GetByUserNameOrEmail", ctx, vo.EmailOrUsername).Return(userEntity, nil)
-	pwSvc.On("ComparePasswords", userEntity.Password, []byte(vo.Password)).Return(true)
+	userRepo.On("GetByUserNameOrEmail", ctx, dto.EmailOrUsername).Return(userEntity, nil)
+	pwSvc.On("ComparePasswords", userEntity.Password, []byte(dto.Password)).Return(true)
 	jwtSvc.On("GenerateAcAndRtTokens", mock.Anything, userID).Return("ac", "rt", nil)
 	jwtSvc.On("ValidateToken", mock.Anything, "rt", jwtpurpose.Refresh).Return(claims, nil)
 	rtRepo.On("Create", ctx, mock.Anything).Return(errors.New("db error"))
 
-	ac, rt, err := manager.Login(ctx, vo)
+	ac, rt, err := manager.Login(ctx, dto)
 	require.Error(t, err)
 	require.Equal(t, "db error", err.Error())
 	require.Empty(t, ac)
@@ -248,10 +248,10 @@ func TestLogin_RefreshTokenCreateFails_ReturnsError(t *testing.T) {
 // 	manager, _, _, _, _, ctx := setupManager()
 
 // 	require.Panics(t, func() {
-// 		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: ""})
+// 		_ = manager.Logout(ctx, user.LogoutUserDto{RefreshToken: ""})
 // 	})
 // 	require.Panics(t, func() {
-// 		_ = manager.Logout(ctx, user.LogoutUserVO{RefreshToken: "something"})
+// 		_ = manager.Logout(ctx, user.LogoutUserDto{RefreshToken: "something"})
 // 	})
 // }
 

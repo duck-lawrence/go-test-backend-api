@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/errorcode"
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/request"
+	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/contract/request"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
 	"github.com/ducklawrence05/go-test-backend-api/pkg/utils/validation"
 	"github.com/gin-gonic/gin"
@@ -32,14 +32,14 @@ func (uc *UserAuthController) Login(c *gin.Context) {
 		return
 	}
 
-	vo := user.LoginUserVO{
+	dto := user.LoginUserDto{
 		EmailOrUsername: req.UserName,
 		Password:        req.Password,
 	}
 
 	ctx := c.Request.Context()
 
-	accessToken, refreshToken, err := uc.auth.Login(ctx, vo)
+	accessToken, refreshToken, err := uc.auth.Login(ctx, dto)
 	if err != nil {
 		errorcode.JSONError(c, err)
 		return
@@ -70,14 +70,14 @@ func (uc *UserAuthController) Logout(c *gin.Context) {
 		return
 	}
 
-	vo := user.LogoutUserVO{
+	dto := user.LogoutUserDto{
 		UserID:       userID.(uuid.UUID),
 		RefreshToken: req.RefreshToken,
 	}
 
 	ctx := c.Request.Context()
 
-	err := uc.auth.Logout(ctx, vo)
+	err := uc.auth.Logout(ctx, dto)
 	if err != nil {
 		errorcode.JSONError(c, err)
 		return

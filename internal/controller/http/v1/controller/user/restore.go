@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ducklawrence05/go-test-backend-api/internal/constants/errorcode"
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/request"
+	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/contract/request"
 	"github.com/ducklawrence05/go-test-backend-api/internal/usecase/user"
 	"github.com/ducklawrence05/go-test-backend-api/pkg/utils/validation"
 	"github.com/gin-gonic/gin"
@@ -79,12 +79,12 @@ func (uc *UserRestoreController) Restore(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing email in email verified token"})
 		return
 	}
-	vo := user.RestoreUserVO{
+	dto := user.RestoreUserDto{
 		Email:       email.(string),
 		NewPassword: req.NewPassword,
 	}
 
-	accessToken, refreshToken, err := uc.restore.Restore(ctx, vo)
+	accessToken, refreshToken, err := uc.restore.Restore(ctx, dto)
 	if err != nil {
 		errorcode.JSONError(c, err)
 		return

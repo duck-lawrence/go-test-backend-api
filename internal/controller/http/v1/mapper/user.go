@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/response"
+	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/contract/response"
 	"github.com/ducklawrence05/go-test-backend-api/internal/entities"
 )
 
