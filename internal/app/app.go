@@ -2,11 +2,7 @@ package app
 
 import (
 	"github.com/ducklawrence05/go-test-backend-api/config"
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http"
-	"github.com/ducklawrence05/go-test-backend-api/internal/controller/http/v1/router"
-	otpWire "github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/wire/otp"
-	roleWire "github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/wire/role"
-	userWire "github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/wire/user"
+	"github.com/ducklawrence05/go-test-backend-api/internal/infrastructure/wire/managers"
 	"github.com/ducklawrence05/go-test-backend-api/internal/initialization"
 	"github.com/ducklawrence05/go-test-backend-api/pkg/logger"
 )
@@ -25,36 +21,21 @@ func Run(cfg *config.Config) {
 	l.Info("Init Redis successfully")
 
 	// ===== usecase =====
-	// user
-	userRegistrationManager := userWire.NewUserRegistrationManager(cfg, pgDb, rdb, l)
-	userAuthManager := userWire.NewUserAuthManager(cfg, pgDb)
-	userRestoreManager := userWire.NewUserRestoreManager(cfg, pgDb, rdb, l)
-	userProfileManager := userWire.NewUserProfileManager(cfg, pgDb)
-	// role
-	roleManager := roleWire.NewRoleManager(pgDb)
-	// otp
-	otpRateLimitManager := otpWire.NewOTPRateLimitManager(rdb)
-	otpVerifyManager := otpWire.NewOTPVerifyManager(rdb)
+	managers, err := managers.InitializeManagers(cfg, pgDb, rdb, l)
+	if err != nil {
+		l.Fatal(err.Error())
+	}
 
 	// init role cache
-	go initialization.NewRolesCache(roleManager, l)
+	go initialization.NewRolesCache(managers.Role, l)
 
 	// ===== router =====
-	routerCfg := &http.RouterConfig{
+	routerCfg := &initialization.RouterConfig{
 		Config: cfg,
 		Logger: l,
 	}
 
-	userManagerSet := &router.UserManagerSet{
-		RegistrationManager: userRegistrationManager,
-		RestoreManager:      userRestoreManager,
-		AuthManager:         userAuthManager,
-		ProfileManager:      userProfileManager,
-		OTPRateLimitManager: otpRateLimitManager,
-		OTPVerifyManager:    otpVerifyManager,
-	}
-
-	router := http.NewRouter(routerCfg, userManagerSet)
+	router := initialization.InitRouter(routerCfg, managers)
 
 	server := initialization.NewServer(cfg.HTTP.Port, router)
 	initialization.RunServer(server, l)
